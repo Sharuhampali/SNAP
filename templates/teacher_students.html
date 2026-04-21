@@ -1,0 +1,45 @@
+{% extends "layout.html" %}
+
+{% block title %}Registered Students{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 1000px; padding: 40px;">
+    
+    <div class="flex" style="justify-content: space-between; align-items: flex-end; margin-bottom: 30px;">
+        <div>
+            <h2 style="font-size: 2.2rem; margin-bottom: 4px; color: var(--primary);">Student Database</h2>
+            <p style="margin-bottom: 0;">View all students currently registered with face data.</p>
+        </div>
+    </div>
+
+    <div class="table-container">
+        {% if students %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Profile Photo</th>
+                    <th>USN / ID</th>
+                    <th>Full Name</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in students %}
+                <tr>
+                    <td>
+                        <img src="/static/students/{{ s.photo }}" style="width: 45px; height: 45px; border-radius: 6px; object-fit: cover; border: 1px solid var(--border);">
+                    </td>
+                    <td><code style="background: var(--hover); padding: 4px 8px; border-radius: 4px; color: var(--primary); font-family: monospace;">{{ s.usn }}</code></td>
+                    <td><strong>{{ s.name }}</strong></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="text-center" style="padding: 40px; color: var(--subtext);">
+            <p>No students registered yet.</p>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

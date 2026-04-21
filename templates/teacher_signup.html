@@ -1,0 +1,39 @@
+{% extends "layout.html" %}
+
+{% block title %}Teacher Signup{% endblock %}
+
+{% block content %}
+<div class="auth-card">
+    
+    <a href="/choose-register" style="text-decoration: none; color: var(--subtext); display: inline-block; margin-bottom: 20px;">
+        <i class="fa-solid fa-arrow-left"></i> Back
+    </a>
+
+    <h2 class="text-center">Teacher Registration</h2>
+    <p class="text-center" style="margin-bottom: 30px;">Create your admin account.</p>
+
+    <form method="POST">
+        <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" name="name" placeholder="Prof. Jane Doe" required>
+        </div>
+        <div class="form-group">
+            <label>Email</label>
+            <input type="email" name="email" placeholder="jane.doe@school.edu" required>
+        </div>
+        <div class="form-group">
+            <label>Password</label>
+            <input type="password" name="password" placeholder="Create a strong password" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary mt-4">
+            <i class="fa-solid fa-chalkboard-user"></i> Complete Signup
+        </button>
+    </form>
+    
+    <div class="text-center mt-4" style="font-size: 0.9rem;">
+        Already registered? <a href="/login" style="color: var(--primary); text-decoration: none;">Login</a>
+    </div>
+
+</div>
+{% endblock %}

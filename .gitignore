@@ -1,0 +1,9 @@
+.env
+*.json
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.svg
+*.webp
+static/students/

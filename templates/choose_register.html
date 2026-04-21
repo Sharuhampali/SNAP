@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+
+{% block title %}Choose Registration{% endblock %}
+
+{% block content %}
+<div class="auth-card text-center">
+    
+    <a href="/login" style="text-decoration: none; color: var(--subtext); display: inline-block; margin-bottom: 20px;">
+        <i class="fa-solid fa-arrow-left"></i> Back to Login
+    </a>
+
+    <h2 style="margin-bottom: 10px;">Join FaceID</h2>
+    <p style="margin-bottom: 40px;">Select your role to continue enrollment.</p>
+    
+    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+        <a href="/register" class="btn btn-primary" style="flex: 1; min-width: 150px; flex-direction: column; padding: 30px; gap: 15px;">
+            <i class="fa-solid fa-user-graduate fa-2x"></i>
+            <span>Student Registration</span>
+        </a>
+        
+        <a href="/teacher/signup" class="btn btn-outline" style="flex: 1; min-width: 150px; flex-direction: column; padding: 30px; gap: 15px;">
+            <i class="fa-solid fa-chalkboard-user fa-2x"></i>
+            <span>Teacher Registration</span>
+        </a>
+    </div>
+
+</div>
+{% endblock %}

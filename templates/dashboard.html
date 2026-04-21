@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FaceID | Management Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg: #f4f7fe; --card: #ffffff; --text: #1e293b; --muted: #64748b;
+            --primary: #4361ee; --border: #e2e8f0; --accent: #2ec4b6;
+        }
+        [data-theme="dark"] {
+            --bg: #0f172a; --card: #1e293b; --text: #f1f5f9; --muted: #94a3b8;
+            --primary: #38bdf8; --border: #334155; --accent: #2ec4b6;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; transition: 0.3s; }
+        body { background: var(--bg); color: var(--text); padding: 40px 20px; min-height: 100vh; }
+
+        .container { max-width: 1000px; margin: 0 auto; }
+        
+        /* Theme Toggle */
+        .theme-toggle { position: fixed; top: 20px; right: 20px; width: 45px; height: 45px; border-radius: 50%; background: var(--card); border: 1px solid var(--border); color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 100; }
+
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .header h1 { font-size: 1.8rem; font-weight: 700; }
+
+        /* Tabs Logic */
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid var(--border); }
+        .tab-btn {
+            padding: 12px 24px; border: none; background: none; cursor: pointer;
+            font-weight: 600; color: var(--muted); position: relative;
+        }
+        .tab-btn.active { color: var(--primary); }
+        .tab-btn.active::after {
+            content: ''; position: absolute; bottom: -2px; left: 0; width: 100%; height: 2px; background: var(--primary);
+        }
+
+        .tab-content { display: none; background: var(--card); border-radius: 20px; padding: 25px; box-shadow: 0 10px 40px rgba(0,0,0,0.05); border: 1px solid var(--border); }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Table Styling */
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 15px; border-bottom: 2px solid var(--bg); color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        td { padding: 15px; border-bottom: 1px solid var(--border); font-size: 0.95rem; vertical-align: middle; }
+        tr:hover td { background: rgba(67, 97, 238, 0.02); }
+        tr:last-child td { border-bottom: none; }
+
+        .student-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border); margin-right: 12px; }
+        
+        .badge { padding: 6px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; background: rgba(46, 196, 182, 0.15); color: var(--accent); }
+        .back-home { text-decoration: none; color: var(--primary); font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; }
+        
+        code { background: var(--bg); padding: 4px 8px; border-radius: 6px; font-family: monospace; color: var(--primary); font-weight: 600; }
+    </style>
+</head>
+<body>
+
+<button class="theme-toggle" onclick="toggleTheme()"><i class="fa-solid fa-moon" id="t-icon"></i></button>
+
+<div class="container">
+    <div class="header">
+        <h1>Admin Dashboard</h1>
+        <a href="/" class="back-home"><i class="fa-solid fa-house"></i> Home</a>
+    </div>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="openTab(event, 'attendance')">Attendance Logs</button>
+        <button class="tab-btn" onclick="openTab(event, 'students')">Registered Students</button>
+    </div>
+
+    <div id="attendance" class="tab-content active">
+        <table>
+            <thead>
+                <tr>
+                    <th>Student Name</th>
+                    <th>Timestamp</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in attendance %}
+                <tr>
+                    <td><strong>{{ log.Name }}</strong></td>
+                    <td>{{ log.Time }}</td>
+                    <td><span class="badge">Present</span></td>
+                </tr>
+                {% else %}
+                <tr><td colspan="3" style="text-align:center; padding: 60px; color: var(--muted);">
+                    <i class="fa-solid fa-calendar-xmark fa-2x" style="display:block; margin-bottom:10px; opacity:0.5;"></i>
+                    No attendance logs found today.
+                </td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div id="students" class="tab-content">
+        <table>
+            <thead>
+                <tr>
+                    <th>Profile</th>
+                    <th>USN</th>
+                    <th>Full Name</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in students %}
+                <tr>
+                    <td><img src="/static/students/{{ s.photo }}" class="student-img"></td>
+                    <td><code>{{ s.usn }}</code></td>
+                    <td>{{ s.name }}</td>
+                  
+                </tr>
+                {% else %}
+                <tr><td colspan="4" style="text-align:center; padding: 60px; color: var(--muted);">
+                    <i class="fa-solid fa-users-slash fa-2x" style="display:block; margin-bottom:10px; opacity:0.5;"></i>
+                    No students registered yet.
+                </td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    function openTab(evt, tabName) {
+        let contents = document.getElementsByClassName("tab-content");
+        for (let i = 0; i < contents.length; i++) contents[i].className = "tab-content";
+
+        let btns = document.getElementsByClassName("tab-btn");
+        for (let i = 0; i < btns.length; i++) btns[i].className = "tab-btn";
+
+        document.getElementById(tabName).classList.add("active");
+        evt.currentTarget.classList.add("active");
+    }
+
+    function toggleTheme() {
+        const h = document.documentElement;
+        const i = document.getElementById('t-icon');
+        const isDark = h.getAttribute('data-theme') === 'dark';
+        h.setAttribute('data-theme', isDark ? 'light' : 'dark');
+        i.className = isDark ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
+        localStorage.setItem('theme', isDark ? 'light' : 'dark');
+    }
+    
+    // Check local storage on load
+    if(localStorage.getItem('theme') === 'dark') toggleTheme();
+</script>
+
+</body>
+</html>

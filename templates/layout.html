@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}{% endblock %} | FaceID</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Theme">
+        <i class="fa-solid fa-sun" id="theme-icon"></i>
+    </button>
+
+
+    {% set is_teacher = session.get('teacher') %}
+    {% set is_student = session.get('student') %}
+    {% set show_sidebar = (is_teacher or is_student) and not hide_sidebar %}
+
+    {% if show_sidebar %}
+    <div class="layout-wrapper">
+        <aside class="sidebar" id="sidebar">
+            <h2
+                style="padding: 0 16px; margin-bottom: 20px; color: var(--primary); display: flex; align-items: center; justify-content: space-between;">
+                FaceID <i class="fa-solid fa-bars" style="cursor:pointer; font-size: 1rem;"
+                    onclick="toggleSidebar()"></i>
+            </h2>
+            <div class="sidebar-links">
+                {% if is_teacher %}
+                <a href="/teacher/dashboard"><i class="fa-solid fa-chart-line"></i> <span>Dashboard</span></a>
+                <a href="/teacher/mark"><i class="fa-solid fa-camera"></i> <span>Mark Attendance</span></a>
+                <a href="/teacher/records"><i class="fa-solid fa-list"></i> <span>Attendance Logs</span></a>
+                <a href="/teacher/students"><i class="fa-solid fa-users"></i> <span>Student DB</span></a>
+                <div style="flex:1;"></div>
+                <a href="/teacher/logout" style="color: var(--danger);"><i class="fa-solid fa-sign-out-alt"></i>
+                    <span>Logout</span></a>
+                {% elif is_student %}
+                <a href="/student/dashboard"><i class="fa-solid fa-chart-pie"></i> <span>My Dashboard</span></a>
+                <a href="/student/profile"><i class="fa-solid fa-user"></i> <span>My Profile</span></a>
+                <div style="flex:1;"></div>
+                <a href="/student/logout" style="color: var(--danger);"><i class="fa-solid fa-sign-out-alt"></i>
+                    <span>Logout</span></a>
+                {% endif %}
+            </div>
+        </aside>
+        <h1> <br> <br> <br> <br> </h1>
+        <main class="main-content">
+            {% endif %}
+
+            {% block content %}{% endblock %}
+
+            {% if show_sidebar %}
+        </main>
+    </div>
+    {% endif %}
+
+    <script>
+        function toggleTheme() {
+            const html = document.documentElement;
+            const icon = document.getElementById('theme-icon');
+            if (html.getAttribute('data-theme') === 'light') {
+                html.setAttribute('data-theme', 'dark');
+                icon.className = 'fa-solid fa-sun';
+                localStorage.setItem('theme', 'dark');
+            } else {
+                html.setAttribute('data-theme', 'light');
+                icon.className = 'fa-solid fa-moon';
+                localStorage.setItem('theme', 'light');
+            }
+        }
+        if (localStorage.getItem('theme') === 'light') toggleTheme();
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('collapsed');
+
+            if (sidebar.classList.contains('collapsed')) {
+                sidebar.style.width = '80px';
+                document.querySelectorAll('.sidebar span').forEach(el => el.style.display = 'none');
+                document.querySelector('.sidebar h2').innerHTML = '<i class="fa-solid fa-bars" style="cursor:pointer;" onclick="toggleSidebar()"></i>';
+                document.querySelector('.sidebar h2').style.justifyContent = 'center';
+            } else {
+                sidebar.style.width = '260px';
+                document.querySelectorAll('.sidebar span').forEach(el => el.style.display = 'block');
+                document.querySelector('.sidebar h2').innerHTML = 'FaceID <i class="fa-solid fa-bars" style="cursor:pointer; font-size: 1rem;" onclick="toggleSidebar()"></i>';
+                document.querySelector('.sidebar h2').style.justifyContent = 'space-between';
+            }
+        }
+    </script>
+</body>
+
+</html>

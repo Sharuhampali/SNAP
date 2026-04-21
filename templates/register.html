@@ -1,0 +1,112 @@
+{% extends "layout.html" %}
+
+{% block title %}Student Registration{% endblock %}
+
+{% block content %}
+<!-- face-api.js -->
+<script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+<script src="/static/face_logic.js"></script>
+
+<div class="container flex" style="gap: 2rem; align-items: stretch; flex-wrap: wrap;">
+    
+    <div style="flex: 1; min-width: 300px;">
+        <h2>Student Enrollment</h2>
+        <p>Register a new student profile and capture their biometric data. The system ensures a single face and liveness check.</p>
+        
+        <form method="POST" id="regForm">
+            <input type="hidden" name="image" id="image_data">
+            
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" name="name" placeholder="John Doe" required>
+            </div>
+            <div class="form-group">
+                <label>USN / Student ID</label>
+                <input type="text" name="usn" placeholder="ABC123" required>
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" name="email" placeholder="student@school.edu" required>
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" name="password" placeholder="Create password" required>
+            </div>
+
+            <button type="button" class="btn btn-primary mt-4" id="submitBtn" disabled onclick="takeSnapshotAndSubmit()">
+                <i class="fa-solid fa-id-card"></i> Complete Registration
+            </button>
+        </form>
+
+        <div class="text-center mt-4" style="font-size: 0.9rem;">
+            Already have an account? <a href="/login" style="color: var(--primary); text-decoration: none;">Login</a>
+        </div>
+    </div>
+
+    <div style="flex: 1; min-width: 300px; display: flex; flex-direction: column; justify-content: center; position: relative;">
+        <div class="video-container">
+            <video id="video" autoplay muted playsinline></video>
+            <img id="preview">
+            <canvas id="canvas" style="display:none;"></canvas>
+            <div class="overlay-msg" id="msgElement">Initializing Camera...</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const video = document.getElementById("video");
+    const preview = document.getElementById("preview");
+    const canvas = document.getElementById("canvas");
+    const imageInput = document.getElementById("image_data");
+    const submitBtn = document.getElementById("submitBtn");
+    const msgElement = document.getElementById("msgElement");
+    const form = document.getElementById("regForm");
+
+    let streamObj = null;
+
+    async function startCamera() {
+        msgElement.style.display = "block";
+        msgElement.innerText = "Loading AI Models...";
+        
+        try {
+            streamObj = await navigator.mediaDevices.getUserMedia({video: true});
+            video.srcObject = streamObj;
+            preview.style.display = 'none';
+            
+            await loadModels();
+            startFaceLogic(video, canvas, msgElement, submitBtn);
+        } catch(e) {
+            msgElement.innerText = "Camera Access Denied";
+            msgElement.style.background = "rgba(239, 68, 68, 0.8)";
+        }
+    }
+
+    function takeSnapshotAndSubmit() {
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        canvas.width = video.videoWidth;  
+        canvas.height = video.videoHeight;
+        canvas.getContext("2d").drawImage(video, 0, 0);
+        
+        const data = canvas.toDataURL("image/jpeg");
+        imageInput.value = data;
+        
+        preview.src = data;
+        preview.style.display = 'block';
+        
+        msgElement.innerText = "Saving profile...";
+        msgElement.style.background = "rgba(79, 70, 229, 0.8)";
+        submitBtn.disabled = true;
+
+        if(streamObj) {
+            streamObj.getTracks().forEach(t => t.stop());
+        }
+        form.submit();
+    }
+
+    document.addEventListener("DOMContentLoaded", startCamera);
+</script>
+{% endblock %}

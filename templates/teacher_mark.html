@@ -1,0 +1,147 @@
+{% extends "layout.html" %}
+
+{% block title %}Teacher | Mark Attendance{% endblock %}
+
+{% block content %}
+<!-- face-api.js -->
+<script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+<script src="/static/face_logic.js"></script>
+
+<div class="container flex" style="gap: 2rem; align-items: stretch; flex-wrap: wrap;">
+    
+    <div style="flex: 1; min-width: 300px;">
+        <a href="/teacher/dashboard" style="text-decoration: none; color: var(--subtext); display: inline-block; margin-bottom: 20px;">
+            <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+        </a>
+        <h2>Mark Student Attendance</h2>
+        <p>Position the student's face in the center of the camera. The system requires them to blink for liveness detection.</p>
+        
+        <form method="POST" id="attendanceForm">
+            <input type="hidden" name="image" id="image_data">
+            
+            <div class="form-group">
+                <label>Mode</label>
+                <select name="mode">
+                    <option value="Entry">Entry</option>
+                    <option value="Exit">Exit</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Subject</label>
+                <select name="subject">
+                    <option value="General">General</option>
+                    <option value="Mathematics">Mathematics</option>
+                    <option value="Science">Science</option>
+                    <option value="History">History</option>
+                    <option value="Computer Science">Computer Science</option>
+                </select>
+            </div>
+
+            <button type="button" class="btn btn-primary mt-4" id="submitBtn" disabled onclick="takeSnapshotAndSubmit()">
+                <i class="fa-solid fa-camera"></i> Capture & Mark
+            </button>
+        </form>
+    </div>
+
+    <div style="flex: 1; min-width: 300px; display: flex; flex-direction: column; justify-content: center; position: relative;">
+        <div class="video-container">
+            <video id="video" autoplay muted playsinline></video>
+            <img id="preview">
+            <canvas id="canvas"></canvas>
+            <div class="overlay-msg" id="msgElement">Initializing Camera...</div>
+        </div>
+
+        <!-- Persistent Scan Result Card -->
+        <div class="scan-result-card" id="scanResult">
+            <div style="flex: 1;">
+                <h3 style="margin-bottom: 2px;" id="scanName">John Doe</h3>
+                <p style="margin-bottom: 0; color: var(--primary); font-weight: 600;" id="scanUSN">USN</p>
+            </div>
+            <div style="text-align: right;">
+                <span id="scanStatus" style="background: var(--success); color: var(--bg); padding: 4px 12px; border-radius: 4px; font-weight: 600; font-size: 0.85rem;">Success</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const video = document.getElementById("video");
+    const preview = document.getElementById("preview");
+    const canvas = document.getElementById("canvas");
+    const imageInput = document.getElementById("image_data");
+    const submitBtn = document.getElementById("submitBtn");
+    const msgElement = document.getElementById("msgElement");
+    const form = document.getElementById("attendanceForm");
+
+    let streamObj = null;
+
+    async function startCamera() {
+        msgElement.style.display = "block";
+        msgElement.innerText = "Loading AI Models...";
+        
+        try {
+            streamObj = await navigator.mediaDevices.getUserMedia({video: true});
+            video.srcObject = streamObj;
+            preview.style.display = 'none';
+            
+            await loadModels();
+            startFaceLogic(video, canvas, msgElement, submitBtn);
+        } catch(e) {
+            msgElement.innerText = "Camera Access Denied";
+            msgElement.style.background = "rgba(239, 68, 68, 0.8)";
+        }
+    }
+
+    async function takeSnapshotAndSubmit() {
+        // We use a temporary canvas to get the snapshot because the main canvas is rendering landmarks
+        const tempCanvas = document.createElement("canvas");
+        tempCanvas.width = video.videoWidth; 
+        tempCanvas.height = video.videoHeight;
+        tempCanvas.getContext("2d").drawImage(video, 0, 0);
+        
+        const data = tempCanvas.toDataURL("image/jpeg");
+        
+        msgElement.innerText = "Processing...";
+        msgElement.style.background = "rgba(79, 70, 229, 0.8)";
+        submitBtn.disabled = true;
+
+        const formData = new FormData(form);
+        formData.set("image", data);
+
+        try {
+            const response = await fetch(window.location.pathname, {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+            
+            const scanResult = document.getElementById("scanResult");
+            scanResult.style.display = "flex";
+            
+            if (result.status === "success") {
+                scanResult.className = "scan-result-card";
+                document.getElementById("scanName").innerText = result.name;
+                document.getElementById("scanUSN").innerText = result.usn;
+                document.getElementById("scanStatus").innerText = "Success";
+                document.getElementById("scanStatus").style.background = "var(--success)";
+            } else {
+                scanResult.className = "scan-result-card error";
+                document.getElementById("scanName").innerText = "Unknown / Error";
+                document.getElementById("scanUSN").innerText = result.message;
+                document.getElementById("scanStatus").innerText = "Failed";
+                document.getElementById("scanStatus").style.background = "var(--danger)";
+            }
+        } catch(err) {
+            alert("Error connecting to server.");
+        }
+        
+        // Reset state for next person (no stream stopping or reloading)
+        hasSmiled = false;
+        msgElement.innerText = "Ready for next person.";
+        msgElement.style.background = "rgba(16, 185, 129, 0.8)";
+    }
+
+    document.addEventListener("DOMContentLoaded", startCamera);
+</script>
+{% endblock %}

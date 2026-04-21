@@ -1,0 +1,119 @@
+{% extends "layout.html" %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+
+<div class="auth-card">
+    <h2 class="text-center">Welcome Back</h2>
+    <p class="text-center" style="margin-bottom: 30px;">Login to access your dashboard.</p>
+
+    <!-- Tabs -->
+    <div style="display: flex; background: var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 25px; padding: 4px;">
+        <div class="tab active" onclick="switchTab('student')" id="tab-student" style="flex: 1; text-align: center; padding: 10px; cursor: pointer; border-radius: 8px; font-weight: 500; transition: 0.3s;">Student</div>
+        <div class="tab" onclick="switchTab('teacher')" id="tab-teacher" style="flex: 1; text-align: center; padding: 10px; cursor: pointer; border-radius: 8px; font-weight: 500; transition: 0.3s;">Teacher</div>
+    </div>
+
+    <!-- STUDENT LOGIN -->
+    <div id="studentForm">
+        <form method="POST" action="/student/login">
+            <div class="form-group">
+                <input name="email" placeholder="Student Email" required>
+            </div>
+            <div class="form-group">
+                <input type="password" name="password" placeholder="Password" required>
+            </div>
+            <button class="btn btn-primary">Login as Student</button>
+        </form>
+    </div>
+
+    <!-- TEACHER LOGIN -->
+    <div id="teacherForm" style="display: none;">
+        <form method="POST" action="/teacher/login">
+            <div class="form-group">
+                <input name="email" placeholder="Teacher Email" required>
+            </div>
+            <div class="form-group">
+                <input type="password" name="password" placeholder="Password" required>
+            </div>
+            <button class="btn btn-primary">Login as Teacher</button>
+        </form>
+    </div>
+
+    <div style="display: flex; align-items: center; margin: 20px 0;">
+        <div style="flex: 1; height: 1px; background: var(--border);"></div>
+        <span style="padding: 0 10px; color: var(--subtext); font-size: 0.9rem;">OR</span>
+        <div style="flex: 1; height: 1px; background: var(--border);"></div>
+    </div>
+
+    <!-- Google Login -->
+    <div id="g_id_onload"
+         data-client_id="{{ google_client_id }}"
+         data-context="signin"
+         data-ux_mode="popup"
+         data-callback="handleCredentialResponse"
+         data-auto_prompt="false">
+    </div>
+    <div class="g_id_signin"
+         data-type="standard"
+         data-shape="rectangular"
+         data-theme="outline"
+         data-text="signin_with"
+         data-size="large"
+         data-logo_alignment="left"
+         style="display: flex; justify-content: center;">
+    </div>
+
+    <div class="text-center mt-4" style="font-size: 0.9rem;">
+        Don't have an account? <a href="/choose-register" style="color: var(--primary); text-decoration: none;">Register</a>
+    </div>
+</div>
+
+<script>
+    let currentRole = "student";
+
+    function switchTab(type) {
+        currentRole = type;
+        const studentForm = document.getElementById("studentForm");
+        const teacherForm = document.getElementById("teacherForm");
+        const tabStudent = document.getElementById("tab-student");
+        const tabTeacher = document.getElementById("tab-teacher");
+
+        if(type === "student"){
+            studentForm.style.display = "block";
+            teacherForm.style.display = "none";
+            tabStudent.style.background = "var(--card)";
+            tabStudent.style.color = "var(--primary)";
+            tabTeacher.style.background = "transparent";
+            tabTeacher.style.color = "var(--text)";
+        } else {
+            teacherForm.style.display = "block";
+            studentForm.style.display = "none";
+            tabTeacher.style.background = "var(--card)";
+            tabTeacher.style.color = "var(--primary)";
+            tabStudent.style.background = "transparent";
+            tabStudent.style.color = "var(--text)";
+        }
+    }
+    // Initialize tab styles
+    switchTab('student');
+
+    function handleCredentialResponse(response) {
+        fetch("/google-login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ 
+                credential: response.credential,
+                role: currentRole
+            })
+        }).then(res => res.json()).then(data => {
+            if (data.status === "success") {
+                window.location.href = data.redirect;
+            } else {
+                alert("Login failed: " + data.message);
+            }
+        });
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,204 @@
+{% extends "layout.html" %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+
+<style>
+/* THEME VARIABLES */
+:root {
+    --bg: #f9fafb;
+    --card: #ffffff;
+    --text: #111827;
+    --subtext: #6b7280;
+    --border: #e5e7eb;
+    --primary: #4f46e5;
+    --primary-hover: #4338ca;
+}
+
+[data-theme="dark"] {
+    --bg: #0f172a;
+    --card: #020617;
+    --text: #e5e7eb;
+    --subtext: #94a3b8;
+    --border: #1e293b;
+    --primary: #6366f1;
+    --primary-hover: #4f46e5;
+}
+
+/* CONTAINER */
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 85vh;
+    background: var(--bg);
+}
+
+/* CARD */
+.card {
+    background: var(--card);
+    padding: 35px;
+    border-radius: 16px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.08);
+    width: 420px;
+    transition: 0.3s;
+}
+
+/* TITLE */
+h2 {
+    text-align: center;
+    margin-bottom: 25px;
+    color: var(--text);
+}
+
+/* TABS */
+.tabs {
+    display: flex;
+    margin-bottom: 20px;
+    background: var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.tab {
+    flex: 1;
+    text-align: center;
+    padding: 12px;
+    cursor: pointer;
+    font-weight: 500;
+    color: var(--subtext);
+    transition: 0.2s;
+}
+
+.tab.active {
+    background: var(--card);
+    color: var(--primary);
+}
+
+/* INPUTS */
+.form-group {
+    margin-bottom: 15px;
+}
+
+input {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text);
+}
+
+input::placeholder {
+    color: var(--subtext);
+}
+
+/* BUTTON */
+button {
+    width: 100%;
+    padding: 12px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 500;
+    margin-top: 10px;
+    transition: 0.2s;
+}
+
+button:hover {
+    background: var(--primary-hover);
+}
+
+/* SWITCH TEXT */
+.switch {
+    text-align: center;
+    margin-top: 15px;
+    color: var(--subtext);
+}
+
+.switch a {
+    color: var(--primary);
+    text-decoration: none;
+}
+
+/* HIDDEN */
+.hidden {
+    display: none;
+}
+</style>
+
+<div class="container">
+
+    <div class="card">
+
+        <h2>Login</h2>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('student')">Student</div>
+            <div class="tab" onclick="switchTab('teacher')">Teacher</div>
+        </div>
+
+        <!-- STUDENT LOGIN -->
+        <form id="studentForm" method="POST" action="/student/login">
+
+            <div class="form-group">
+                <input name="email" placeholder="Student Email" required>
+            </div>
+
+            <div class="form-group">
+                <input type="password" name="password" placeholder="Password" required>
+            </div>
+
+            <button>Login as Student</button>
+
+        </form>
+
+        <!-- TEACHER LOGIN -->
+        <form id="teacherForm" class="hidden" method="POST" action="/teacher/login">
+
+            <div class="form-group">
+                <input name="email" placeholder="Teacher Email" required>
+            </div>
+
+            <div class="form-group">
+                <input type="password" name="password" placeholder="Password" required>
+            </div>
+
+            <button>Login as Teacher</button>
+
+        </form>
+
+        <div class="switch">
+            Don't have an account?
+            <a href="/choose-register">Register</a>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+function switchTab(type) {
+    let studentForm = document.getElementById("studentForm");
+    let teacherForm = document.getElementById("teacherForm");
+    let tabs = document.querySelectorAll(".tab");
+
+    tabs.forEach(tab => tab.classList.remove("active"));
+
+    if(type === "student"){
+        studentForm.classList.remove("hidden");
+        teacherForm.classList.add("hidden");
+        tabs[0].classList.add("active");
+    } else {
+        teacherForm.classList.remove("hidden");
+        studentForm.classList.add("hidden");
+        tabs[1].classList.add("active");
+    }
+}
+</script>
+
+{% endblock %}

@@ -1,4 +1,4 @@
-# Biometric Attendance Platform
+# SNAP - Smart NextGen Attendance Platform
 
 A full-featured, AI-powered Biometric Attendance System built with Flask. This platform provides a comprehensive and secure facial recognition-based attendance solution with separate portals for students and teachers, dynamic dashboards, and Google OAuth integration.
 

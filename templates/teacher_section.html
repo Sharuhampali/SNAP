@@ -1,0 +1,363 @@
+{% extends "layout.html" %}
+
+{% block title %}Section {{ section }} Dashboard{% endblock %}
+
+{% block content %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+    .container {
+        max-width: 1100px;
+        margin-top: 40px;
+        padding: 40px;
+    }
+
+    h2 {
+        font-size: 2.2rem;
+        color: var(--primary);
+        margin-bottom: 4px;
+    }
+
+    h3 {
+        font-size: 1.15rem;
+        margin-bottom: 15px;
+        color: var(--text);
+    }
+
+    .section-subtext {
+        color: var(--subtext);
+        font-size: 0.9rem;
+    }
+
+    .top-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+    }
+
+    .back-link {
+        text-decoration: none;
+        color: var(--subtext);
+        font-size: 0.9rem;
+        display: inline-block;
+        margin-bottom: 8px;
+    }
+
+    .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 20px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
+        transition: all 0.2s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-2px);
+    }
+
+    .flex-wrap {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    .mini-navbar {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+
+    .mini-nav-item {
+        padding: 7px 14px;
+        border-radius: 20px;
+        border: 1px solid var(--border);
+        background: var(--card);
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .mini-nav-item:hover {
+        background: rgba(99, 102, 241, 0.1);
+    }
+
+    .mini-nav-item.active {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    th {
+        text-align: left;
+        padding: 12px;
+        font-size: 0.8rem;
+        color: var(--subtext);
+        border-bottom: 1px solid var(--border);
+    }
+
+    td {
+        padding: 14px 12px;
+        font-size: 0.9rem;
+        border-bottom: 1px solid var(--border);
+    }
+
+    tr:hover {
+        background: rgba(148, 163, 184, 0.06);
+    }
+
+    .status-pill {
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .present {
+        background: rgba(16, 185, 129, 0.1);
+        color: var(--success);
+    }
+
+    .exit {
+        background: rgba(239, 68, 68, 0.1);
+        color: var(--danger);
+    }
+
+    .stat-number {
+        font-size: 1.8rem;
+        font-weight: 700;
+    }
+</style>
+
+<div class="container">
+
+    <!-- HEADER -->
+    <div class="top-bar">
+        <div>
+            <a href="/teacher/dashboard" class="back-link">
+                <i class="fa-solid fa-arrow-left"></i> Back to Overview
+            </a>
+            <h2>Section {{ section }}</h2>
+            <p class="section-subtext">Timetable and detailed attendance logs.</p>
+        </div>
+
+        <a href="/teacher/mark" class="btn btn-primary">
+            <i class="fa-solid fa-camera"></i> Mark Attendance
+        </a>
+    </div>
+
+    <!-- TIMETABLE -->
+    <h3>Class Timetable</h3>
+    <div class="card" style="margin-bottom: 40px;">
+        <div class="timetable-grid">
+            <div class="timetable-header" style="grid-column: 1 / 2;">Time</div>
+
+            {% set days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] %}
+            {% for day in days %}
+            <div class="timetable-header">{{ day }}</div>
+            {% endfor %}
+
+            {% for slot in timeslots %}
+            <div class="timetable-time">{{ slot }}</div>
+
+            {% for day in days %}
+            <div class="timetable-cell">
+                {% set ns = namespace(found=false) %}
+                {% if timetable and day in timetable %}
+                {% for class in timetable[day] %}
+                {% if class.start == slot %}
+                <div class="timetable-class">{{ class.subject }}</div>
+                {% set ns.found = true %}
+                {% endif %}
+                {% endfor %}
+                {% endif %}
+                {% if not ns.found %}
+                <span style="color: var(--border); font-size: 0.8rem;">Free</span>
+                {% endif %}
+            </div>
+            {% endfor %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- STATS -->
+    <h3>Today's Overview</h3>
+    <div class="flex-wrap" style="margin-bottom: 40px;">
+
+        <div class="card" style="flex:2; min-width:300px;">
+            <h4 style="color: var(--subtext); margin-bottom:10px;">Subject-wise Check-ins</h4>
+            <canvas id="subjectChart" height="200"></canvas>
+        </div>
+
+        <div class="card" style="flex:1; min-width:250px; text-align:center;">
+            <h4 style="color: var(--subtext); margin-bottom:10px;">Class Attendance Status</h4>
+
+            <canvas id="attendancePieChart" width="160" height="160"></canvas>
+
+            <div style="display:flex; justify-content:center; gap:30px; margin-top:20px;">
+                <div>
+                    <div class="stat-number" style="color:var(--success);">
+                        {{ present_today }}
+                    </div>
+                    <div class="section-subtext">Present</div>
+                </div>
+
+                <div>
+                    <div class="stat-number" style="color:var(--danger);">
+                        {{ absent_today }}
+                    </div>
+                    <div class="section-subtext">Absent</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FILTER -->
+    <h3>Detailed Logs</h3>
+
+    <div class="mini-navbar" id="subjectNav">
+        <div class="mini-nav-item active" onclick="filterLogs('All')">All Subjects</div>
+        {% for subject in subject_stats.keys() %}
+        <div class="mini-nav-item" onclick="filterLogs('{{ subject }}')">{{ subject }}</div>
+        {% endfor %}
+    </div>
+
+    <!-- TABLE -->
+    <div class="card">
+        {% if attendance %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Student</th>
+                    <th>Subject</th>
+                    <th>Date & Time</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+
+            <tbody id="logsTableBody">
+                {% for row in attendance %}
+                <tr class="log-row" data-subject="{{ row.Subject }}">
+                    <td>
+                        <div class="flex-align-center">
+                            {% if row.Photo %}
+                            <img src="/static/students/{{ row.Photo }}" class="avatar-sm">
+                            {% else %}
+                            <div class="avatar-text">{{ row.Name[0] }}</div>
+                            {% endif %}
+                            <strong>{{ row.Name }}</strong>
+                        </div>
+                    </td>
+
+                    <td style="color: var(--subtext); font-weight: 500;">
+                        {{ row.Subject }}
+                    </td>
+
+                    <td>
+                        <div>{{ row.Date }}</div>
+                        <div class="section-subtext">{{ row.Time }}</div>
+                    </td>
+
+                    <td>
+                        {% if row.Mode == "Entry" %}
+                        <span class="status-pill present">
+                            <i class="fa-solid fa-check"></i> Present
+                        </span>
+                        {% else %}
+                        <span class="status-pill exit">
+                            <i class="fa-solid fa-right-from-bracket"></i> Exit
+                        </span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div style="text-align:center; padding:40px; color:var(--subtext);">
+            No records found for this section.
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+
+<!-- ORIGINAL JS UNTOUCHED -->
+<script>
+function filterLogs(subject) {
+    document.querySelectorAll('.mini-nav-item').forEach(el => el.classList.remove('active'));
+    event.target.classList.add('active');
+
+    const rows = document.querySelectorAll('.log-row');
+    rows.forEach(row => {
+        if (subject === 'All' || row.getAttribute('data-subject') === subject) {
+            row.style.display = 'table-row';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+
+    const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
+    const successColor = getComputedStyle(document.documentElement).getPropertyValue('--success').trim();
+    const dangerColor = getComputedStyle(document.documentElement).getPropertyValue('--danger').trim();
+    const cardColor = getComputedStyle(document.documentElement).getPropertyValue('--card').trim();
+    const subtextColor = getComputedStyle(document.documentElement).getPropertyValue('--subtext').trim();
+
+    const barCtx = document.getElementById('subjectChart');
+    if (barCtx) {
+        const rawStatsStr = '{{ subject_stats | tojson | safe }}';
+        const rawStats = rawStatsStr ? JSON.parse(rawStatsStr) : {};
+        const labels = Object.keys(rawStats);
+        const data = Object.values(rawStats);
+
+        new Chart(barCtx, {
+            type: 'bar',
+            data: {
+                labels: labels.length > 0 ? labels : ['No Data'],
+                datasets: [{
+                    data: data.length > 0 ? data : [0],
+                    backgroundColor: primaryColor,
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+
+    const pieCtx = document.getElementById('attendancePieChart');
+    if (pieCtx) {
+        const present = Number('{{ present_today }}') || 0;
+        const absent = Number('{{ absent_today }}') || 0;
+
+        new Chart(pieCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Present','Absent'],
+                datasets: [{
+                    data: present || absent ? [present, absent] : [1],
+                    backgroundColor: present || absent ? [successColor, dangerColor] : ['#ccc']
+                }]
+            },
+            options: {
+                cutout: '70%',
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+
+});
+</script>
+
+{% endblock %}

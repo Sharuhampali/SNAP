@@ -2,19 +2,19 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root[data-theme="dark"] {
-    --bg: #09090b;
-    --card: #18181b;
-    --text: #fafafa;
-    --subtext: #a1a1aa;
-    --border: #27272a;
-    --hover: #27272a;
+    --bg: #0f172a;
+    --card: #1e293b;
+    --text: #f8fafc;
+    --subtext: #94a3b8;
+    --border: #334155;
+    --hover: #334155;
 
-    --primary: #3b82f6;
-    --primary-hover: #2563eb;
+    --primary: #14b8a6; /* Teal/Green */
+    --primary-hover: #0d9488;
     --success: #10b981;
     --danger: #ef4444;
 
-    --shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
 }
 
 :root[data-theme="light"] {
@@ -25,12 +25,12 @@
     --border: #e2e8f0;
     --hover: #f1f5f9;
 
-    --primary: #2563eb;
-    --primary-hover: #1d4ed8;
+    --primary: #0f766e; /* Teal/Green */
+    --primary-hover: #0f766e;
     --success: #059669;
     --danger: #dc2626;
 
-    --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
 }
 
 * {
@@ -133,7 +133,7 @@ body {
 .container {
     background: var(--card);
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: 16px;
     box-shadow: var(--shadow);
     width: 100%;
     max-width: 1200px;
@@ -156,7 +156,7 @@ body {
 .auth-card {
     background: var(--card);
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: 16px;
     box-shadow: var(--shadow);
     width: 100%;
     max-width: 400px;
@@ -380,4 +380,151 @@ tr:hover td {
 
 .flex-1 {
     flex: 1;
+}
+
+/* Progress Ring */
+.progress-ring {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: conic-gradient(var(--primary) var(--percentage, 0%), var(--hover) 0);
+    box-shadow: inset 0 0 0 2px var(--border);
+}
+.progress-ring::before {
+    content: "";
+    position: absolute;
+    inset: 12px;
+    background: var(--card);
+    border-radius: 50%;
+}
+.progress-ring-text {
+    position: relative;
+    z-index: 1;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.progress-ring-text span {
+    font-size: 0.8rem;
+    color: var(--subtext);
+    font-weight: 500;
+}
+
+/* Timetable Grid */
+.timetable-grid {
+    display: grid;
+    grid-template-columns: 80px repeat(6, 1fr); /* Time + 6 Days */
+    gap: 1px;
+    background-color: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+}
+.timetable-header {
+    background: var(--bg);
+    padding: 10px;
+    text-align: center;
+    font-weight: 600;
+    color: var(--subtext);
+    font-size: 0.85rem;
+}
+.timetable-cell {
+    background: var(--card);
+    padding: 15px 10px;
+    text-align: center;
+    min-height: 80px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    transition: background 0.2s;
+}
+.timetable-cell:hover {
+    background: var(--hover);
+}
+.timetable-time {
+    background: var(--bg);
+    padding: 15px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--subtext);
+}
+.timetable-class {
+    background: rgba(15, 118, 110, 0.1);
+    color: var(--primary);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    width: 100%;
+    border-left: 3px solid var(--primary);
+}
+:root[data-theme="dark"] .timetable-class {
+    background: rgba(20, 184, 166, 0.1);
+}
+
+/* Mini Navbar */
+.mini-navbar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 10px;
+    overflow-x: auto;
+}
+.mini-nav-item {
+    padding: 8px 16px;
+    cursor: pointer;
+    border-radius: 20px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: var(--subtext);
+    transition: 0.2s;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    white-space: nowrap;
+}
+.mini-nav-item.active {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+}
+.mini-nav-item:hover:not(.active) {
+    background: var(--hover);
+}
+
+/* Avatar */
+.avatar-sm {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--border);
+}
+.avatar-text {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+.flex-align-center {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }

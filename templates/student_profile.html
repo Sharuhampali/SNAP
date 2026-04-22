@@ -17,9 +17,10 @@
         </div>
         <div>
             <h3 style="margin-bottom: 5px; font-size: 1.4rem;">{{ student.name }}</h3>
-            <div style="color: var(--subtext); display: flex; gap: 15px;">
+            <div style="color: var(--subtext); display: flex; gap: 15px; flex-wrap: wrap;">
                 <span><i class="fa-solid fa-id-card"></i> {{ student.usn }}</span>
                 <span><i class="fa-solid fa-envelope"></i> {{ student.email }}</span>
+                <span><i class="fa-solid fa-users"></i> Section {{ student.section | default('A') }}</span>
             </div>
             <p style="margin-top: 10px; margin-bottom: 0; font-size: 0.85rem; color: var(--danger);"><i class="fa-solid fa-lock"></i> Academic fields cannot be changed.</p>
         </div>

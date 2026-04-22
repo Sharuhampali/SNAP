@@ -35,13 +35,8 @@
 
                 <div class="form-group">
                     <label>Subject</label>
-                    <select name="subject">
-                        <option value="General">General</option>
-                        <option value="Mathematics">Mathematics</option>
-                        <option value="Science">Science</option>
-                        <option value="History">History</option>
-                        <option value="Computer Science">Computer Science</option>
-                    </select>
+                    <input type="text" name="subject" value="{{ current_subject }}" readonly style="background: var(--hover); cursor: not-allowed; border-color: var(--border);">
+                    <small style="color: var(--subtext); display: block; margin-top: 5px;">Auto-detected from timetable based on your section.</small>
                 </div>
 
                 <button type="button" class="btn btn-primary mt-4" id="submitBtn" disabled onclick="takeSnapshotAndSubmit()">

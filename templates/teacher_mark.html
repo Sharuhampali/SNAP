@@ -28,14 +28,17 @@
             </div>
 
             <div class="form-group">
-                <label>Subject</label>
-                <select name="subject">
-                    <option value="General">General</option>
-                    <option value="Mathematics">Mathematics</option>
-                    <option value="Science">Science</option>
-                    <option value="History">History</option>
-                    <option value="Computer Science">Computer Science</option>
+                <label>Section</label>
+                <select id="sectionSelect" onchange="fetchCurrentSubject()">
+                    <option value="A">Section A</option>
+                    <option value="B">Section B</option>
+                    <option value="C">Section C</option>
                 </select>
+            </div>
+            <div class="form-group">
+                <label>Subject</label>
+                <input type="text" name="subject" id="subjectInput" value="Loading..." readonly style="background: var(--hover); cursor: not-allowed; border-color: var(--border);">
+                <small style="color: var(--subtext); display: block; margin-top: 5px;">Auto-detected from timetable based on time and section.</small>
             </div>
 
             <button type="button" class="btn btn-primary mt-4" id="submitBtn" disabled onclick="takeSnapshotAndSubmit()">
@@ -66,7 +69,23 @@
 </div>
 
 <script>
-    const video = document.getElementById("video");
+    function fetchCurrentSubject() {
+        const section = document.getElementById('sectionSelect').value;
+        const input = document.getElementById('subjectInput');
+        input.value = "Loading...";
+        fetch(`/api/current_subject/${section}`)
+            .then(res => res.json())
+            .then(data => {
+                input.value = data.subject;
+            })
+            .catch(err => {
+                input.value = "General";
+            });
+    }
+
+    document.addEventListener('DOMContentLoaded', fetchCurrentSubject);
+
+    const video = document.getElementById('video');
     const preview = document.getElementById("preview");
     const canvas = document.getElementById("canvas");
     const imageInput = document.getElementById("image_data");

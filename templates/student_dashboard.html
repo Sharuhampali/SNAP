@@ -3,74 +3,135 @@
 {% block title %}Student Dashboard{% endblock %}
 
 {% block content %}
-<div class="container" style="max-width: 1000px; padding: 40px;">
-    
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="container" style="max-width: 1100px; padding: 40px;">
+
     <div class="flex" style="justify-content: space-between; align-items: flex-end; margin-bottom: 30px;">
         <div>
-            <h2 style="font-size: 2.2rem; margin-bottom: 4px; color: var(--primary);">Welcome, {{ student.name }}</h2>
-            <p style="margin-bottom: 0;">USN: <b style="color:var(--text);">{{ student.usn }}</b> &middot; Email: <b style="color:var(--text);">{{ student.email }}</b></p>
+            <h2 style="font-size: 2.2rem; margin-bottom: 4px; color: var(--primary);">
+                Welcome, {{ student.name }}
+            </h2>
+            <p style="margin-bottom: 0;">
+                USN: <b style="color:var(--text);">{{ student.usn }}</b> &middot;
+                Section: <b style="color:var(--text);">{{ student.section | default('A') }}</b>
+            </p>
         </div>
     </div>
 
     <!-- Quick Stats -->
     <div class="flex" style="gap: 20px; margin-bottom: 30px; flex-wrap: wrap;">
-        <div style="background: var(--hover); border: 1px solid var(--border); padding: 20px; border-radius: 8px; flex: 1; text-align: center;">
-            <h3 style="color: var(--subtext); margin-bottom: 5px; font-size: 0.95rem; font-weight: 500;">Total Classes Attended</h3>
-            <div style="font-size: 2.5rem; font-weight: 700; color: var(--text);">{{ total_attended }}</div>
+
+        <div
+            style="background: var(--card); border: 1px solid var(--border); padding: 30px; border-radius: 16px; flex: 1; min-width: 280px;">
+            <h3 style="color: var(--subtext); font-size: 0.95rem;">Total Classes Attended</h3>
+            <div style="font-size: 2.5rem; font-weight: 700;">
+                {{ total_attended }}
+                <span style="font-size: 1rem; color: var(--subtext);">
+                    / {{ total_held }} classes
+                </span>
+            </div>
         </div>
-        <div style="background: var(--hover); border: 1px solid var(--border); padding: 20px; border-radius: 8px; flex: 1; text-align: center;">
-            <h3 style="color: var(--subtext); margin-bottom: 5px; font-size: 0.95rem; font-weight: 500;">Unique Subjects Attended</h3>
-            <div style="font-size: 2.5rem; font-weight: 700; color: var(--text);">{{ total_subjects }}</div>
+
+        <div
+            style="background: var(--card); border: 1px solid var(--border); padding: 30px; border-radius: 16px; flex: 1; min-width: 200px;">
+            <h3 style="color: var(--subtext); font-size: 0.95rem;">Unique Subjects</h3>
+            <div style="font-size: 2.5rem; font-weight: 700;">{{ total_subjects }}</div>
         </div>
+
     </div>
 
-    <!-- Filter -->
-    <div style="background: var(--hover); padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--border);">
-        <form method="GET" class="flex" style="gap: 15px; align-items: flex-end; flex-wrap: wrap;">
-            <div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 200px;">
-                <label>Filter by Subject</label>
-                <select name="subject">
-                    <option value="All" {% if request.args.get('subject') == 'All' %}selected{% endif %}>All Subjects</option>
-                    <option value="General" {% if request.args.get('subject') == 'General' %}selected{% endif %}>General</option>
-                    <option value="Mathematics" {% if request.args.get('subject') == 'Mathematics' %}selected{% endif %}>Mathematics</option>
-                    <option value="Science" {% if request.args.get('subject') == 'Science' %}selected{% endif %}>Science</option>
-                    <option value="History" {% if request.args.get('subject') == 'History' %}selected{% endif %}>History</option>
-                    <option value="Computer Science" {% if request.args.get('subject') == 'Computer Science' %}selected{% endif %}>Computer Science</option>
-                </select>
-            </div>
-            <div class="form-group" style="margin-bottom: 0; flex: 1; min-width: 150px;">
-                <label>Filter by Date</label>
-                <input type="date" name="date" value="{{ request.args.get('date', '') }}">
-            </div>
-            <button class="btn btn-primary" style="width: auto; padding: 12px 20px;"><i class="fa-solid fa-filter"></i> Apply</button>
-            <a href="/student/dashboard" class="btn btn-outline" style="width: auto; padding: 12px 20px;"><i class="fa-solid fa-xmark"></i> Clear</a>
-        </form>
+    <!-- Timetable -->
+    <h3 style="margin-bottom: 15px;">My Timetable</h3>
+    <div class="timetable-grid" style="margin-bottom: 40px;">
+        <div class="timetable-header">Time</div>
+
+        {% set days = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"] %}
+        {% for day in days %}
+        <div class="timetable-header">{{ day }}</div>
+        {% endfor %}
+
+        {% for slot in timeslots %}
+        <div class="timetable-time">{{ slot }}</div>
+
+        {% for day in days %}
+        <div class="timetable-cell">
+            {% set ns = namespace(found=false) %}
+            {% if timetable and day in timetable %}
+            {% for class in timetable[day] %}
+            {% if class.start == slot %}
+            <div class="timetable-class">{{ class.subject }}</div>
+            {% set ns.found = true %}
+            {% endif %}
+            {% endfor %}
+            {% endif %}
+            {% if not ns.found %}
+            <span style="color: var(--border); font-size: 0.8rem;">Free</span>
+            {% endif %}
+        </div>
+        {% endfor %}
+        {% endfor %}
     </div>
 
-    <!-- Attendance History -->
-    <h3 style="margin-top: 30px;">Attendance Logs</h3>
+    <!-- Charts -->
+    <div class="flex" style="gap: 20px; margin-bottom: 40px; flex-wrap: wrap;">
+
+        <!-- BAR CHART -->
+        <div
+            style="background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; flex: 2; min-width: 300px; height: 320px;">
+            <h3 style="margin-bottom: 10px; font-size: 1rem; color: var(--subtext);">
+                Classes Attended by Subject
+            </h3>
+            <canvas id="studentSubjectChart"></canvas>
+        </div>
+
+        <!-- PIE CHART -->
+        <div
+            style="background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; flex: 1; min-width: 250px; text-align: center;">
+            <h3 style="font-size: 1rem; color: var(--subtext);">Overall Attendance</h3>
+
+            <canvas id="studentPieChart" width="160" height="160"></canvas>
+
+            <div style="margin-top: 10px; font-size: 2rem; font-weight: 700; color: var(--primary);">
+                {{ attendance_percentage }}%
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Logs -->
+    <h3>Detailed Logs</h3>
+
+    <div class="mini-navbar">
+        <div class="mini-nav-item active" onclick="filterLogs('All')">All Subjects</div>
+        {% for subject in subject_stats.keys() %}
+        <div class="mini-nav-item" onclick="filterLogs('{{ subject }}')">{{ subject }}</div>
+        {% endfor %}
+    </div>
+
     <div class="table-container">
         {% if attendance %}
         <table>
             <thead>
                 <tr>
+                    <th>Subject</th>
                     <th>Date</th>
                     <th>Time</th>
-                    <th>Subject</th>
-                    <th>Mode</th>
+                    <th>Status</th>
                 </tr>
             </thead>
             <tbody>
-                {% for row in attendance|reverse %}
-                <tr>
+                {% for row in attendance %}
+                <tr class="log-row" data-subject="{{ row.Subject }}">
+                    <td>{{ row.Subject }}</td>
                     <td>{{ row.Date }}</td>
                     <td>{{ row.Time }}</td>
-                    <td><span style="font-weight: 600;">{{ row.Subject }}</span></td>
                     <td>
                         {% if row.Mode == "Entry" %}
-                            <span style="background: rgba(16,185,129,0.1); color: var(--success); padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">Entry</span>
+                        <span style="color: var(--success);">Present</span>
                         {% else %}
-                            <span style="background: rgba(239,68,68,0.1); color: var(--danger); padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">Exit</span>
+                        <span style="color: var(--danger);">Exit</span>
                         {% endif %}
                     </td>
                 </tr>
@@ -78,11 +139,80 @@
             </tbody>
         </table>
         {% else %}
-        <div class="text-center" style="padding: 40px; color: var(--subtext);">
-            <p>No attendance records found.</p>
-        </div>
+        <p>No attendance records found.</p>
         {% endif %}
     </div>
 
 </div>
+
+<script>
+    function filterLogs(subject) {
+        document.querySelectorAll('.mini-nav-item').forEach(el => el.classList.remove('active'));
+        event.target.classList.add('active');
+
+        document.querySelectorAll('.log-row').forEach(row => {
+            row.style.display =
+                (subject === 'All' || row.getAttribute('data-subject') === subject)
+                    ? 'table-row' : 'none';
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+
+        const primary = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
+        const subtext = getComputedStyle(document.documentElement).getPropertyValue('--subtext').trim();
+        const card = getComputedStyle(document.documentElement).getPropertyValue('--card').trim();
+
+        // BAR CHART
+        const rawStatsStr = '{{ subject_stats | tojson | safe }}';
+        const rawStats = rawStatsStr ? JSON.parse(rawStatsStr) : {};
+
+        new Chart(document.getElementById('studentSubjectChart'), {
+            type: 'bar',
+            data: {
+                labels: Object.keys(rawStats),
+                datasets: [{
+                    data: Object.values(rawStats),
+                    backgroundColor: primary,
+                    borderRadius: 8,
+                    maxBarThickness: 40
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1, color: subtext }
+                    },
+                    x: {
+                        ticks: { color: subtext }
+                    }
+                }
+            }
+        });
+
+        // PIE CHART
+        const percentage = Number('{{ attendance_percentage }}') || 0;
+
+        new Chart(document.getElementById('studentPieChart'), {
+            type: 'doughnut',
+            data: {
+                datasets: [{
+                    data: [percentage, 100 - percentage],
+                    backgroundColor: [primary, '#e5e7eb'],
+                    borderColor: card
+                }]
+            },
+            options: {
+                cutout: '75%',
+                plugins: { legend: { display: false } }
+            }
+        });
+
+    });
+</script>
+
 {% endblock %}

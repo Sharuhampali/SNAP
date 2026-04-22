@@ -228,6 +228,7 @@ def register():
         usn = request.form["usn"]
         email = request.form["email"]
         password = request.form["password"]
+        section = request.form.get("section", "A").upper()
         image = request.form["image"]
 
         # Save face
@@ -240,6 +241,7 @@ def register():
             "name": name,
             "usn": usn,
             "email": email,
+            "section": section,
             "password": password
         })
         save_data("students.json", students)
@@ -305,7 +307,7 @@ def google_login():
             session["teacher"] = new_user
             return jsonify({"status": "success", "redirect": "/teacher/dashboard"})
         else:
-            new_user = {"name": name, "email": email, "usn": "N/A", "password": ""}
+            new_user = {"name": name, "email": email, "usn": "N/A", "section": "A", "password": ""}
             students.append(new_user)
             save_data("students.json", students)
             session["student"] = new_user
@@ -318,9 +320,21 @@ def google_login():
 @student_required
 def student_dashboard():
     student = session["student"]
+    section = student.get("section", "A")
     attendance_data = []
     total_attended = 0
     total_subjects = 0
+    total_held = 0
+    attendance_percentage = 0
+    subject_stats = {}
+    
+    # Get Timetable & Timeslots
+    timetable = load_data("timetable.json").get(section, {})
+    timeslots = set()
+    for day_schedule in timetable.values():
+        for c in day_schedule:
+            timeslots.add(c["start"])
+    timeslots = sorted(list(timeslots))
 
     if os.path.exists("attendance.csv") and os.path.getsize("attendance.csv") > 0:
         df = pd.read_csv("attendance.csv")
@@ -328,28 +342,34 @@ def student_dashboard():
         if "Subject" not in df.columns:
             df["Subject"] = "General"
 
-        # Apply Filters
-        subj_filter = request.args.get("subject")
-        date_filter = request.args.get("date")
-        
+        # Filter for this student
         student_df = df[df["Name"] == student["name"]]
         
-        # Calculate stats BEFORE filtering
+        # Calculate stats
         total_attended = len(student_df[student_df["Mode"] == "Entry"])
         total_subjects = student_df[student_df["Mode"] == "Entry"]["Subject"].nunique()
+        
+        # Chart Data: Attended per subject
+        for subject in student_df["Subject"].unique():
+            subj_df = student_df[student_df["Subject"] == subject]
+            subject_stats[subject] = len(subj_df[subj_df["Mode"] == "Entry"])
+        
+        # Calculate total classes held globally
+        total_held = df[df["Mode"] == "Entry"].groupby(["Date", "Subject"]).ngroups
+        attendance_percentage = int((total_attended / total_held) * 100) if total_held > 0 else 0
 
-        if subj_filter and subj_filter != "All":
-            student_df = student_df[student_df["Subject"] == subj_filter]
-        if date_filter:
-            student_df = student_df[student_df["Date"] == date_filter]
-            
-        attendance_data = student_df.to_dict(orient="records")
+        attendance_data = student_df.sort_values(by=["Date", "Time"], ascending=[False, False]).to_dict(orient="records")
 
     return render_template("student_dashboard.html",
                            student=student,
+                           timetable=timetable,
+                           timeslots=timeslots,
                            attendance=attendance_data,
                            total_attended=total_attended,
-                           total_subjects=total_subjects)
+                           total_subjects=total_subjects,
+                           total_held=total_held,
+                           subject_stats=subject_stats,
+                           attendance_percentage=attendance_percentage)
 
 
 @app.route("/student/profile", methods=["GET", "POST"])
@@ -433,22 +453,70 @@ def teacher_login():
 @teacher_required
 def teacher_dashboard():
     teacher = session["teacher"]
-    recent_logs = []
     today_checkins = 0
 
     if os.path.exists("attendance.csv") and os.path.getsize("attendance.csv") > 0:
         df = pd.read_csv("attendance.csv")
-        
-        if "Subject" not in df.columns:
-            df["Subject"] = "General"
-
-        # Quick daily summary
         today_str = datetime.now().strftime("%Y-%m-%d")
         today_checkins = len(df[(df["Date"] == today_str) & (df["Mode"] == "Entry")])
 
-        recent_logs = df.tail(15).to_dict(orient="records")
+    return render_template("teacher_dashboard.html", teacher=teacher, today_checkins=today_checkins)
 
-    return render_template("teacher_dashboard.html", teacher=teacher, recent_logs=recent_logs, today_checkins=today_checkins)
+@app.route("/teacher/section/<section_id>")
+@teacher_required
+def teacher_section(section_id):
+    section_id = section_id.upper()
+    
+    # Get Timetable & Timeslots
+    timetable = load_data("timetable.json").get(section_id, {})
+    timeslots = set()
+    for day_schedule in timetable.values():
+        for c in day_schedule:
+            timeslots.add(c["start"])
+    timeslots = sorted(list(timeslots))
+    
+    # Get Students in this section
+    students = [s for s in load_data("students.json") if s.get("section", "A") == section_id]
+    total_students = len(students)
+    
+    # Get Attendance Stats for this section
+    attendance_data = []
+    subject_stats = {}
+    present_today = 0
+    absent_today = total_students
+    
+    if os.path.exists("attendance.csv") and os.path.getsize("attendance.csv") > 0:
+        df = pd.read_csv("attendance.csv")
+        # Filter df to only include students in this section
+        section_student_names = [s["name"] for s in students]
+        df = df[df["Name"].isin(section_student_names)]
+        
+        # Add profile photos to df records (simulated join)
+        student_photos = {s["name"]: f"{s['usn']}_{s['name']}.jpg" for s in students}
+        df["Photo"] = df["Name"].map(lambda x: student_photos.get(x, ""))
+        
+        # Get today's stats for charts
+        today_str = datetime.now().strftime("%Y-%m-%d")
+        today_df = df[df["Date"] == today_str]
+        
+        present_today = today_df[today_df["Mode"] == "Entry"]["Name"].nunique()
+        absent_today = total_students - present_today
+        
+        for subject in today_df["Subject"].unique():
+            subj_df = today_df[today_df["Subject"] == subject]
+            subject_stats[subject] = len(subj_df[subj_df["Mode"] == "Entry"])
+            
+        attendance_data = df.sort_values(by=["Date", "Time"], ascending=[False, False]).to_dict(orient="records")
+
+    return render_template("teacher_section.html", 
+                           section=section_id, 
+                           timetable=timetable, 
+                           timeslots=timeslots,
+                           attendance=attendance_data, 
+                           subject_stats=subject_stats,
+                           total_students=total_students,
+                           present_today=present_today,
+                           absent_today=absent_today)
 
 @app.route("/export-csv")
 @teacher_required
@@ -491,7 +559,22 @@ def teacher_mark():
         except:
             return jsonify({"status": "error", "message": "API error"})
 
-    return render_template("teacher_mark.html")
+    return render_template("teacher_mark.html", current_subject=get_current_subject("A"))
+
+
+# ----------------------------
+# TIMETABLE PAGE
+# ----------------------------
+@app.route("/teacher/timetable", methods=["GET", "POST"])
+@teacher_required
+def teacher_timetable():
+    if request.method == "POST":
+        timetable_data = request.json
+        save_data("timetable.json", timetable_data)
+        return jsonify({"status": "success"})
+        
+    timetable = load_data("timetable.json")
+    return render_template("teacher_timetable.html", timetable=timetable)
 
 
 # ----------------------------
@@ -596,7 +679,7 @@ def attendance():
         except:
             return jsonify({"status": "error", "message": "API error"})
 
-    return render_template("attendance.html")
+    return render_template("attendance.html", current_subject=get_current_subject(session.get("student", {}).get("section", "A")))
 
 @app.route('/evaluate', methods=['GET'])
 def evaluate():
@@ -634,9 +717,30 @@ def dashboard():
                            students=registered_students)
 
 
+@app.route("/api/current_subject/<section>")
+def api_current_subject(section):
+    subject = get_current_subject(section.upper())
+    return jsonify({"subject": subject})
+
 # ===========================
 # 🧠 HELPERS
 # ===========================
+
+def get_current_subject(section):
+    timetable = load_data("timetable.json")
+    if not timetable or section not in timetable:
+        return "General"
+    
+    now = datetime.now()
+    current_day = now.strftime("%A")
+    current_time = now.strftime("%H:%M")
+    
+    day_schedule = timetable[section].get(current_day, [])
+    for slot in day_schedule:
+        if slot["start"] <= current_time <= slot["end"]:
+            return slot["subject"]
+            
+    return "General"
 
 def save_image(data, path):
     img = base64.b64decode(data.split(',')[1])

@@ -1,0 +1,123 @@
+{% extends "layout.html" %}
+
+{% block title %}Manage Timetable{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 1000px; padding: 40px;">
+    
+    <div class="flex" style="justify-content: space-between; align-items: flex-end; margin-bottom: 30px;">
+        <div>
+            <h2 style="font-size: 2.2rem; margin-bottom: 4px; color: var(--primary);">Class Timetable</h2>
+            <p style="margin-bottom: 0;">Configure the schedule for each section to enable automated subject detection.</p>
+        </div>
+    </div>
+
+    <!-- Section Selector -->
+    <div style="background: var(--hover); padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--border);">
+        <div class="form-group" style="margin-bottom: 0; max-width: 300px;">
+            <label>Select Section to Edit</label>
+            <select id="sectionSelect" onchange="loadSection()">
+                <option value="A">Section A</option>
+                <option value="B">Section B</option>
+                <option value="C">Section C</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Instructions -->
+    <div style="margin-bottom: 20px; font-size: 0.9rem; color: var(--subtext);">
+        Format: <code>HH:MM-HH:MM Subject Name</code> (e.g., <code>09:00-10:00 Mathematics</code>). One class per line.
+    </div>
+
+    <div class="timetable-editor" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+        {% set days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] %}
+        {% for day in days %}
+        <div class="form-group" style="background: var(--card); border: 1px solid var(--border); padding: 15px; border-radius: 8px;">
+            <label style="color: var(--primary); font-weight: 600; font-size: 1rem;">{{ day }}</label>
+            <textarea id="day-{{ day }}" rows="5" style="width: 100%; border-radius: 6px; padding: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); resize: none; font-family: monospace;" placeholder="09:00-10:00 Mathematics&#10;10:00-11:00 Science"></textarea>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div style="margin-top: 30px;">
+        <button class="btn btn-primary" onclick="saveTimetable()" id="saveBtn">
+            <i class="fa-solid fa-save"></i> Save Timetable
+        </button>
+        <span id="saveStatus" style="margin-left: 15px; color: var(--success); font-weight: 600; display: none;">Saved Successfully!</span>
+    </div>
+
+</div>
+
+<script>
+    // Load initial data
+    let rawTimetable = {{ timetable | tojson | safe }};
+    if (!rawTimetable || Object.keys(rawTimetable).length === 0) {
+        rawTimetable = {
+            "A": {"Monday": [], "Tuesday": [], "Wednesday": [], "Thursday": [], "Friday": [], "Saturday": []},
+            "B": {"Monday": [], "Tuesday": [], "Wednesday": [], "Thursday": [], "Friday": [], "Saturday": []},
+            "C": {"Monday": [], "Tuesday": [], "Wednesday": [], "Thursday": [], "Friday": [], "Saturday": []}
+        };
+    }
+
+    function loadSection() {
+        const sec = document.getElementById("sectionSelect").value;
+        const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        
+        // Ensure section exists in object
+        if (!rawTimetable[sec]) {
+            rawTimetable[sec] = {};
+        }
+
+        days.forEach(day => {
+            const ta = document.getElementById("day-" + day);
+            const classes = rawTimetable[sec][day] || [];
+            
+            // Format back to text
+            ta.value = classes.map(c => `${c.start}-${c.end} ${c.subject}`).join("\n");
+        });
+    }
+
+    function saveTimetable() {
+        const sec = document.getElementById("sectionSelect").value;
+        const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        const btn = document.getElementById("saveBtn");
+        
+        btn.disabled = true;
+        btn.innerHTML = "Saving...";
+
+        days.forEach(day => {
+            const lines = document.getElementById("day-" + day).value.split("\n").filter(l => l.trim().length > 0);
+            rawTimetable[sec][day] = lines.map(line => {
+                const parts = line.split(" ");
+                const timeStr = parts[0]; // e.g. 09:00-10:00
+                const subject = parts.slice(1).join(" ");
+                const [start, end] = timeStr.split("-");
+                return { start: start.trim(), end: end.trim(), subject: subject.trim() };
+            });
+        });
+
+        fetch("/teacher/timetable", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(rawTimetable)
+        })
+        .then(res => res.json())
+        .then(data => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-save"></i> Save Timetable';
+            const status = document.getElementById("saveStatus");
+            status.style.display = "inline";
+            setTimeout(() => status.style.display = "none", 3000);
+        })
+        .catch(err => {
+            alert("Error saving timetable.");
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-save"></i> Save Timetable';
+        });
+    }
+
+    // Initial load
+    document.addEventListener("DOMContentLoaded", loadSection);
+
+</script>
+{% endblock %}

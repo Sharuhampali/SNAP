@@ -28,43 +28,21 @@
         </div>
     </div>
 
-    <!-- Recent History -->
-    <h3 style="margin-top: 30px;">Recent Activity Logs</h3>
-    <div class="table-container">
-        {% if recent_logs %}
-        <table>
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Time</th>
-                    <th>Student</th>
-                    <th>Subject</th>
-                    <th>Mode</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for row in recent_logs|reverse %}
-                <tr>
-                    <td>{{ row.Date }}</td>
-                    <td>{{ row.Time }}</td>
-                    <td><strong style="color:var(--primary);">{{ row.Name }}</strong></td>
-                    <td>{{ row.Subject }}</td>
-                    <td>
-                        {% if row.Mode == "Entry" %}
-                            <span style="background: rgba(16,185,129,0.1); color: var(--success); padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">Entry</span>
-                        {% else %}
-                            <span style="background: rgba(239,68,68,0.1); color: var(--danger); padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">Exit</span>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% else %}
-        <div class="text-center" style="padding: 40px; color: var(--subtext);">
-            <p>No recent activity found.</p>
-        </div>
-        {% endif %}
+    <!-- Section Cards -->
+    <h3 style="margin-top: 30px;">Manage Sections</h3>
+    <div class="flex" style="gap: 20px; flex-wrap: wrap;">
+        {% set sections = ["A", "B", "C"] %}
+        {% for sec in sections %}
+        <a href="/teacher/section/{{ sec }}" style="text-decoration: none; flex: 1; min-width: 250px;">
+            <div style="background: var(--card); border: 1px solid var(--border); padding: 30px; border-radius: 12px; transition: 0.2s; text-align: center;" onmouseover="this.style.borderColor='var(--primary)'; this.style.transform='translateY(-5px)';" onmouseout="this.style.borderColor='var(--border)'; this.style.transform='translateY(0)';">
+                <div style="width: 60px; height: 60px; background: rgba(20,184,166,0.1); color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin: 0 auto 15px;">
+                    {{ sec }}
+                </div>
+                <h3 style="color: var(--text); margin-bottom: 5px;">Section {{ sec }}</h3>
+                <p style="color: var(--subtext); font-size: 0.9rem; margin-bottom: 0;">View timetable & logs</p>
+            </div>
+        </a>
+        {% endfor %}
     </div>
 
 </div>
